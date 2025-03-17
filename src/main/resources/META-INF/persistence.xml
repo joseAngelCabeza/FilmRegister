@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <persistence-unit name="miUnidadDePersistencia" transaction-type="RESOURCE_LOCAL">
+        <!-- Clases de entidad -->
+        <class>logica.Usuario</class>
+        <class>logica.Pelicula</class>
+        <class>logica.Reserva</class>
+
+        <properties>
+            <!-- Actualización automática del esquema -->
+            <property name="hibernate.hbm2ddl.auto" value="update" />
+
+            <!-- Dialecto de Hibernate para MariaDB -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MariaDBDialect" />
+
+            <!-- Mostrar SQL en consola -->
+            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.use_sql_comments" value="true" />
+
+            <!-- Proveedor de persistencia -->
+            <property name="jakarta.persistence.provider" value="org.hibernate.jpa.HibernatePersistenceProvider" />
+
+            <!-- Detalles de conexión a la base de datos -->
+            <property name="jakarta.persistence.jdbc.url" value="${DB_URL}" />
+            <property name="jakarta.persistence.jdbc.user" value="${DB_USER}" />
+            <property name="jakarta.persistence.jdbc.password" value="${DB_PASSWORD}" />
+            <property name="jakarta.persistence.jdbc.driver" value="org.mariadb.jdbc.Driver" />
+        </properties>
+    </persistence-unit>
+</persistence>
