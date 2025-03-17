@@ -8,7 +8,7 @@ LABEL authors="Jose Angel"
 WORKDIR /usr/local/tomcat
 
 # Copiar el archivo .war generado a la carpeta webapps de Tomcat
-COPY target/FilmRegister-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/FilmRegister-1.0-SNAPSHOT.war
+COPY target/FilmRegister-1.0-SNAPSHOT.war /usr/local/tomcat/webapps/
 
 # Exponer el puerto 8080 en el contenedor
 EXPOSE 8080
