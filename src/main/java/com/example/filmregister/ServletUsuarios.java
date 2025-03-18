@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.mindrot.jbcrypt.BCrypt;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
+import java.util.Properties;
 
 @WebServlet("/servletUsuarios")
 public class ServletUsuarios extends HttpServlet {
@@ -139,9 +142,7 @@ public class ServletUsuarios extends HttpServlet {
             em.close();
         }
     }
-
-
-
+    
     private void registro(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         EntityManager em = entityManagerFactory.createEntityManager();
         EntityTransaction tx = em.getTransaction();
@@ -191,11 +192,13 @@ public class ServletUsuarios extends HttpServlet {
             usuarioNuevo.setApellidos(apellidos);
             usuarioNuevo.setEmail(email);
             usuarioNuevo.setUsuario(usuario);
-            String hashedPassword = BCrypt.hashpw(contraseña, BCrypt.gensalt());
-            usuarioNuevo.setPassword(hashedPassword);
+            usuarioNuevo.setPassword(contraseña); // 🔥 Se guarda la contraseña sin cifrar
 
             em.persist(usuarioNuevo);
             tx.commit();
+
+            // Enviar el correo antes de dar el mensaje de éxito
+            Correo(request, response);
 
             response.getWriter().write("{\"success\": true, \"message\": \"Usuario registrado con éxito\", \"redirect\": \"index.jsp\"}");
 
@@ -209,6 +212,59 @@ public class ServletUsuarios extends HttpServlet {
             em.close();
         }
     }
+
+    private void Correo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String emailDestino = request.getParameter("email");
+
+        final String remitente = "joseangelcabezafp@gmail.com";
+        final String clave = "uaod xkrq fmgp ydqr";
+
+        // Configuración del servidor SMTP
+        Properties propiedades = new Properties();
+        propiedades.put("mail.smtp.host", "smtp.gmail.com");
+        propiedades.put("mail.smtp.port", "587");
+        propiedades.put("mail.smtp.auth", "true");
+        propiedades.put("mail.smtp.starttls.enable", "true");
+
+        // Autenticación
+        Session sesion = Session.getInstance(propiedades, new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(remitente, clave);
+            }
+        });
+
+        try {
+            // Crear el mensaje con HTML
+            Message mensaje = new MimeMessage(sesion);
+            mensaje.setFrom(new InternetAddress(remitente));
+            mensaje.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailDestino));
+            mensaje.setSubject("🎉 Registro Exitoso en FilmRegister");
+
+            String htmlContent = "<html>" +
+                    "<body style='font-family: Arial, sans-serif;'>" +
+                    "<h2 style='color: #007bff;'>¡Bienvenido a FilmRegister! 🎬</h2>" +
+                    "<p>Hola <b>" + request.getParameter("nombre") + "</b>,</p>" +
+                    "<p>Tu registro se ha completado con éxito. Ahora puedes acceder a tu cuenta y disfrutar de nuestra plataforma.</p>" +
+                    "<br>" +
+                    "<p style='color: #555;'>Si no solicitaste este registro, ignora este mensaje.</p>" +
+                    "<hr>" +
+                    "<p style='font-size: 12px; color: #777;'>Este es un mensaje automático, por favor no respondas a este correo.</p>" +
+                    "</body>" +
+                    "</html>";
+
+            mensaje.setContent(htmlContent, "text/html; charset=utf-8");
+
+            // Enviar el correo
+            Transport.send(mensaje);
+            System.out.println("Correo enviado correctamente.");
+
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            response.getWriter().write("{\"success\": false, \"message\": \"Error al enviar el correo.\"}");
+        }
+    }
+
+
 
     @Override
     public void destroy() {

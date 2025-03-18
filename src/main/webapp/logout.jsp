@@ -13,7 +13,7 @@
         sessionObj.invalidate();
     }
 
-    // Elimino la cookie de sesión
+    // Con esto borro la sesion
     Cookie[] cookies = request.getCookies();
     if (cookies != null) {
         for (Cookie cookie : cookies) {

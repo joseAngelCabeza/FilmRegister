@@ -149,7 +149,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Iniciar Sesión</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <a href="registro.jsp">Ir a Registro</a>
+
             </div>
             <div class="modal-body">
                 <% if (loginError != null) { %>
