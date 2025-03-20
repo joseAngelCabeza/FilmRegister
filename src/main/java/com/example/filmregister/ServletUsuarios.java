@@ -142,7 +142,7 @@ public class ServletUsuarios extends HttpServlet {
             em.close();
         }
     }
-    
+
     private void registro(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         EntityManager em = entityManagerFactory.createEntityManager();
         EntityTransaction tx = em.getTransaction();

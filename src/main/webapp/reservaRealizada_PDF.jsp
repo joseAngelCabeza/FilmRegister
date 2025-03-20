@@ -104,7 +104,7 @@
     <% } %>
 
     <!-- Botón para generar el ticket en PDF -->
-    <form action="servletReservas?action=CreoticketPDF" method="post">
+    <form action="servletReservas?action=CreoticketPDF" method="post" target="_blank">
         <input type="hidden" name="action" value="CrearTicketPDF">
         <input type="hidden" name="idReserva" value="<%= reservaEncontrada.getId() %>">
         <button type="submit" class="boton-ticket">Generar Ticket PDF</button>

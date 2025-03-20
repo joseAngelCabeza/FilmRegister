@@ -1,10 +1,3 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: cronc
-  Date: 10/02/2025
-  Time: 11:56
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List, logica.Reserva" %>
 <%@ page import="jakarta.servlet.http.HttpSession" %>
@@ -12,6 +5,9 @@
 <%
     HttpSession sessionObj = request.getSession();
     List<Reserva> reservas = (List<Reserva>) sessionObj.getAttribute("reservas");
+
+    // Verificar si no hay reservas para mostrar
+    boolean noReservas = (reservas == null || reservas.isEmpty());
 %>
 
 <!DOCTYPE html>
@@ -39,6 +35,12 @@
 <a href="index.jsp" class="enlace-volver">&larr; Volver</a>
 <div class="container mt-5">
     <h2 class="text-center">Mis Reservas</h2>
+
+    <% if (noReservas) { %>
+    <div class="alert alert-info text-center" role="alert">
+        No tienes reservas registradas.
+    </div>
+    <% } else { %>
     <table class="table table-striped">
         <thead>
         <tr>
@@ -50,7 +52,6 @@
         </tr>
         </thead>
         <tbody>
-        <% if (reservas != null) { %>
         <% for (Reserva reserva : reservas) { %>
         <tr>
             <td><%= reserva.getId() %></td>
@@ -68,12 +69,11 @@
             </td>
         </tr>
         <% } %>
-        <% } else { %>
-        <tr><td colspan="5" class="text-center">No tienes reservas registradas.</td></tr>
-        <% } %>
         </tbody>
     </table>
+    <% } %>
 
 </div>
 </body>
 </html>
+

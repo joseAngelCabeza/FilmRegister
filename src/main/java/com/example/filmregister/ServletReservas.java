@@ -89,6 +89,7 @@ public class ServletReservas extends HttpServlet{
         switch (action) {
             case "CreoticketPDF":
                 CreoTicket(request,response);
+                break;
             case "realizarReserva":
                 CreoReserva(request, response);
                 break;
@@ -201,7 +202,8 @@ public class ServletReservas extends HttpServlet{
 
             // Configurar respuesta como PDF
             response.setContentType("application/pdf");
-            response.setHeader("Content-Disposition", "attachment; filename=ticket_reserva_" + idReserva + ".pdf");
+            response.setHeader("Content-Disposition", "inline; filename=ticket_reserva_" + idReserva + ".pdf");
+
 
             // Crear documento con orientación horizontal
             Document documento = new Document(PageSize.A4.rotate()); // A4 en horizontal
@@ -312,15 +314,21 @@ public class ServletReservas extends HttpServlet{
             return;
         }
 
-        // Obtener la lista de películas desde la base de datos
+        // Obtener el usuario autenticado
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+
+        // Obtener la lista de reservas desde la base de datos para este usuario
         EntityManager em = entityManagerFactory.createEntityManager();
         List<Reserva> reservas = null;
 
         try {
-            reservas = em.createQuery("SELECT p FROM Reserva p", Reserva.class).getResultList();
+            // Buscar las reservas del usuario autenticado
+            reservas = em.createQuery("SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
+                    .setParameter("usuario", usuario)
+                    .getResultList();
             System.out.println("Número de reservas recuperadas: " + reservas.size());
 
-            // Guardar en sesión en lugar de en request
+            // Guardar las reservas en la sesión
             session.setAttribute("reservas", reservas);
 
         } catch (Exception e) {
@@ -333,9 +341,10 @@ public class ServletReservas extends HttpServlet{
             em.close();
         }
 
-        // Redirigir al JSP
+        // Redirigir al JSP para mostrar las reservas
         request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
     }
+
 
     @Override
     public void destroy() {
