@@ -51,13 +51,13 @@
             border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Agregamos transición */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .boton-ticket:hover {
-            background-color: black; /* Mantén el fondo negro */
-            transform: scale(1.05); /* Efecto de agrandar el botón */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Agrega una sombra sutil */
+            background-color: black;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>

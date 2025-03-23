@@ -62,7 +62,7 @@
 <div class="container-form">
     <h2>Registro de Usuarios</h2>
     <form id="RegistroUsuario" action="servletUsuarios" method="post">
-        <input type="hidden" name="action" value="RegistroUsuario"> <!-- Cambio para que coincida con el switch -->
+        <input type="hidden" name="action" value="RegistroUsuario">
 
         <div class="mb-3">
             <label for="dni" class="form-label">DNI:</label>
@@ -80,7 +80,7 @@
         </div>
 
         <div class="mb-3">
-            <label for="email" class="form-label">Email:</label> <!-- Corregido for-label -->
+            <label for="email" class="form-label">Email:</label>
             <input type="email" id="email" name="email" class="form-control" required>
         </div>
 
@@ -124,8 +124,8 @@
 
                 if (data.success) {
                     setTimeout(() => {
-                        window.location.href = data.redirect; // Redirección a index.jsp
-                    }, 2000); // Espera 2 segundos antes de redirigir
+                        window.location.href = data.redirect;
+                    }, 2000);
                 }
 
                 setTimeout(() => {

@@ -65,15 +65,15 @@ public class ServletPeliculas extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession(false); // No crear sesión si no existe
+        HttpSession session = request.getSession(false);
 
-        // Verificar si el usuario está autenticado
+        // Compruebp que hay una sesion
         if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect("index.jsp");
             return;
         }
 
-        // Obtener la lista de películas desde la base de datos
+        // Obtengo la lista de peliculas de la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
         List<Pelicula> peliculas = null;
 
@@ -81,7 +81,7 @@ public class ServletPeliculas extends HttpServlet {
             peliculas = em.createQuery("SELECT p FROM Pelicula p", Pelicula.class).getResultList();
             System.out.println("Número de películas recuperadas: " + peliculas.size());
 
-            // Guardar en sesión en lugar de en request
+            // Guardo en la sesion la respuesta de la consulta
             session.setAttribute("peliculas", peliculas);
 
         } catch (Exception e) {
@@ -94,7 +94,7 @@ public class ServletPeliculas extends HttpServlet {
             em.close();
         }
 
-        // Redirigir al JSP
+        // Envio la respuesta a mi index.jsp para listar las peliculas
         request.getRequestDispatcher("/index.jsp").forward(request, response);
     }
 

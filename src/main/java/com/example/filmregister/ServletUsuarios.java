@@ -87,7 +87,7 @@ public class ServletUsuarios extends HttpServlet {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        // Obtener la sesión (sin crear una nueva todavía)
+        // Obtengo la sesion
         HttpSession session = request.getSession();
 
         if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
@@ -112,21 +112,21 @@ public class ServletUsuarios extends HttpServlet {
             Usuario usuario = result.get(0);
             System.out.println("Usuario encontrado: " + usuario.getNombre());
 
-            // Comparar la contraseña directamente sin BCrypt
+            // Comparo la contraseña introducida con la de la BD
             if (!password.equals(usuario.getPassword())) {
                 session.setAttribute("error", "Usuario o contraseña incorrectos.");
                 response.sendRedirect("index.jsp");
                 return;
             }
 
-            // Cerrar sesión anterior (si existe) antes de crear una nueva
+            // Invalido la sesion anterior si existe para crear una nueva
             session.invalidate();
-            session = request.getSession(true); // Crear nueva sesión
+            session = request.getSession(true);
 
             session.setAttribute("usuario", usuario.getUsuario());
-            session.setMaxInactiveInterval(86400); // 24 horas
+            session.setMaxInactiveInterval(86400);// Puede aguntar activa la sesion 24 horas
 
-            // Crear cookie de sesión
+            // Creo la cookie de sesión
             Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
             sessionCookie.setMaxAge(86400); // 24 horas
             sessionCookie.setHttpOnly(true);
@@ -164,7 +164,7 @@ public class ServletUsuarios extends HttpServlet {
                 return;
             }
 
-            // Validar los campos de entrada
+            // Obtengo del formulario los parametros de registro
             String nombre = request.getParameter("nombre");
             String apellidos = request.getParameter("apellidos");
             String email = request.getParameter("email");
@@ -177,7 +177,7 @@ public class ServletUsuarios extends HttpServlet {
                 return;
             }
 
-            // Verificar si el correo electrónico ya está registrado
+            // Compruebo que no existe en la base de datos el correo introducido
             List<Usuario> usuarioConEmail = em.createQuery("SELECT u FROM Usuario u WHERE u.email = :email", Usuario.class)
                     .setParameter("email", email)
                     .getResultList();
@@ -192,12 +192,12 @@ public class ServletUsuarios extends HttpServlet {
             usuarioNuevo.setApellidos(apellidos);
             usuarioNuevo.setEmail(email);
             usuarioNuevo.setUsuario(usuario);
-            usuarioNuevo.setPassword(contraseña); // 🔥 Se guarda la contraseña sin cifrar
+            usuarioNuevo.setPassword(contraseña);
 
             em.persist(usuarioNuevo);
             tx.commit();
 
-            // Enviar el correo antes de dar el mensaje de éxito
+            // LLamo a mi funcion de mandar correo antes de hacer el alta
             Correo(request, response);
 
             response.getWriter().write("{\"success\": true, \"message\": \"Usuario registrado con éxito\", \"redirect\": \"index.jsp\"}");
@@ -216,10 +216,10 @@ public class ServletUsuarios extends HttpServlet {
     private void Correo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String emailDestino = request.getParameter("email");
 
-        final String remitente = "joseangelcabezafp@gmail.com";
-        final String clave = "uaod xkrq fmgp ydqr";
+        final String remitente = "joseangelcabezafp@gmail.com"; //Pongo el correo que utilizare para mandar mensajes
+        final String clave = "uaod xkrq fmgp ydqr"; //Esto es la contraseña de aplicacion para que gmail permita al programa mandar correos
 
-        // Configuración del servidor SMTP
+        // Introduzco la configuración del servidor SMTP
         Properties propiedades = new Properties();
         propiedades.put("mail.smtp.host", "smtp.gmail.com");
         propiedades.put("mail.smtp.port", "587");
@@ -234,7 +234,7 @@ public class ServletUsuarios extends HttpServlet {
         });
 
         try {
-            // Crear el mensaje con HTML
+            // Preparo el mensaje Html que se vera en el correo
             Message mensaje = new MimeMessage(sesion);
             mensaje.setFrom(new InternetAddress(remitente));
             mensaje.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailDestino));
@@ -254,7 +254,7 @@ public class ServletUsuarios extends HttpServlet {
 
             mensaje.setContent(htmlContent, "text/html; charset=utf-8");
 
-            // Enviar el correo
+            // Envio el correo
             Transport.send(mensaje);
             System.out.println("Correo enviado correctamente.");
 

@@ -7,21 +7,21 @@
 
 <%
     HttpSession sessionObj = request.getSession();
-    boolean autenticado = (sessionObj.getAttribute("usuario") != null);
+    boolean autenticado = (sessionObj.getAttribute("usuario") != null); //Compruebo que se ha realizado el login
     String loginError = (String) sessionObj.getAttribute("error");
     String nombreUsuario = autenticado ? (String) sessionObj.getAttribute("usuario") : "Invitado";
 
-    // Limpiar el mensaje de error después de mostrarlo
+    // Limpio el mensaje de error del login
     if (loginError != null) {
         sessionObj.removeAttribute("error");
     }
 
-    // Obtener lista de películas
+    // Obtengo la lista de peliculas
     List<Pelicula> peliculas = (sessionObj.getAttribute("peliculas") instanceof List<?>)
             ? (List<Pelicula>) sessionObj.getAttribute("peliculas")
             : null;
 
-    // Paginación
+    // Variables de mi Paginacion
     int peliculasPorPagina = 5;
     int paginaActual = request.getParameter("pagina") != null ? Integer.parseInt(request.getParameter("pagina")) : 1;
     int totalPeliculas = (peliculas != null) ? peliculas.size() : 0;
@@ -39,6 +39,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
+        /*Ajusto algunos parametros cuando se reduce el tamño de la pantalla*/
         @media (max-width: 1450px) {
             table, thead, tbody, th, td, tr {
                 display: block;
@@ -83,6 +84,7 @@
     </style>
 </head>
 <body>
+<!--Pongo una barra superior para el nombre de la web y para mostrar el usuario actual-->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="#">
@@ -96,7 +98,7 @@
 
 <div class="container-fluid">
     <div class="row vh-100">
-        <!-- Sidebar -->
+        <!--Pongo una barra lateral a modo de Menú-->
         <div class="col-md-2 bg-light p-2">
             <h4>Menú</h4>
             <ul class="nav flex-column">
@@ -111,7 +113,7 @@
             <% } %>
         </div>
 
-        <!-- Contenido principal -->
+        <!--Tabla con la Cartelera de Peliculas-->
         <div class="col-md-9 p-3">
             <h2>Películas en Cartelera</h2>
 
@@ -172,7 +174,7 @@
                 </table>
             </div>
 
-            <!-- Paginación -->
+            <!-- Enlaces de la Paginación -->
             <nav aria-label="Paginación">
                 <ul class="pagination justify-content-center">
                     <% if (paginaActual > 1) { %>
@@ -198,7 +200,7 @@
     </div>
 </div>
 
-<!-- Modal de inicio de sesión -->
+<!-- Modal de inicio de sesión Obligatorio-->
 <div class="modal " id="loginModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog " id="modalDialog">
         <div class="modal-content">

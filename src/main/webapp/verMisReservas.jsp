@@ -6,7 +6,7 @@
     HttpSession sessionObj = request.getSession();
     List<Reserva> reservas = (List<Reserva>) sessionObj.getAttribute("reservas");
 
-    // Verificar si no hay reservas para mostrar
+    // Verifico si no hay reservas para mostrar
     boolean noReservas = (reservas == null || reservas.isEmpty());
 %>
 
