@@ -9,6 +9,7 @@
     HttpSession sessionObj = request.getSession();
     boolean autenticado = (sessionObj.getAttribute("usuario") != null);
     String loginError = (String) sessionObj.getAttribute("error");
+    String nombreUsuario = autenticado ? (String) sessionObj.getAttribute("usuario") : "Invitado";
 
     // Limpiar el mensaje de error después de mostrarlo
     if (loginError != null) {
@@ -70,15 +71,29 @@
                 height: auto;
             }
 
-            /* Agregar bordes a las filas de la tabla */
             th, td {
                 border: 1px solid #ddd;
                 padding: 10px;
+            }
+
+            footer {
+                margin-top: auto;
             }
         }
     </style>
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            🎬 <span class="ms-2">FilmRegister</span>
+        </a>
+        <div class="ms-auto text-white">
+            Bienvenido, <strong><%= nombreUsuario %></strong>
+        </div>
+    </div>
+</nav>
+
 <div class="container-fluid">
     <div class="row vh-100">
         <!-- Sidebar -->
@@ -98,7 +113,7 @@
 
         <!-- Contenido principal -->
         <div class="col-md-9 p-3">
-            <h2>Películas Disponibles</h2>
+            <h2>Películas en Cartelera</h2>
 
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
@@ -216,7 +231,7 @@
     const modal = new bootstrap.Modal(document.getElementById('loginModal'));
     modal.show();
 
-    // Si el usuario intenta cerrar el modal haciendo clic fuera, agrandar el modal
+    // Evito que el usuario se salte el modal evitando que haga click fuera y resaltando que debe logearse
     document.getElementById('loginModal').addEventListener('click', function(event) {
         if (event.target === this) {
             document.getElementById('modalDialog').classList.add('modal-lg'); // Agrandar el modal
