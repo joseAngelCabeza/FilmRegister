@@ -40,47 +40,56 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         /*Ajusto algunos parametros cuando se reduce el tamño de la pantalla*/
-        @media (max-width: 1450px) {
+        @media (max-width: 1400px) {
             table, thead, tbody, th, td, tr {
                 display: block;
-                width: 100%;
             }
 
-            th {
-                text-align: left;
+            thead {
+                display: none; /* Ocultamos cabecera */
+            }
+
+            tr {
+                margin-bottom: 15px;
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                padding: 10px;
+                background-color: #f7f7f7;
             }
 
             td {
-                text-align: left;
-                display: block;
-                padding-left: 50%;
-                position: relative;
-                border: 3px solid #ddd; /* Bordes en las celdas */
-                margin-bottom: 5px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+                white-space: normal;
+                overflow-wrap: break-word;
             }
 
             td::before {
                 content: attr(data-label);
-                position: absolute;
-                left: 10px;
-                top: 5px;
                 font-weight: bold;
+                color: #004085;
+                margin-right: 10px;
+                flex: 0 0 45%;
+                text-align: left;
             }
 
             td img {
                 max-width: 100%;
                 height: auto;
+                display: block;
+                margin-left: auto;
             }
 
-            th, td {
-                border: 1px solid #ddd;
-                padding: 10px;
-            }
-
-            footer {
-                margin-top: auto;
+            td:last-child {
+                border-bottom: none;
             }
         }
+
+
+
     </style>
 </head>
 <body>
@@ -102,7 +111,6 @@
         <div class="col-md-2 bg-light p-2">
             <h4>Menú</h4>
             <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="reservarPelicula.jsp">Reservar Película</a></li>
                 <li class="nav-item"><a class="nav-link" href="verMisReservas.jsp">Ver Mis Reservas</a></li>
                 <li class="nav-item"><a class="nav-link" href="peliculas.jsp">Películas en Cartelera</a></li>
                 <li class="nav-item"><a class="nav-link" href="cancelarReserva.jsp">Cancelar Reserva</a></li>
@@ -142,27 +150,30 @@
                             Pelicula pelicula = peliculas.get(i);
                     %>
                     <tr>
-                        <td><%= pelicula.getId() %></td>
-                        <td><%= pelicula.getTitulo() %></td>
-                        <td><%= pelicula.getDuracion() %> min</td>
-                        <td><%= pelicula.getGenero() %></td>
-                        <td><%= pelicula.getDirector() %></td>
-                        <td><%= pelicula.getClasificacion() %></td>
-                        <td><%= pelicula.getFechaEstreno() %></td>
-                        <td><%= pelicula.getPais() %></td>
-                        <td><%= pelicula.getIdioma() %></td>
-                        <td><%= pelicula.getDisponible() ? "Sí" : "No" %></td>
-                        <td>$<%= pelicula.getPrecioReserva() %></td>
-                        <td>
+                    <tr>
+                        <td data-label="ID"><%= pelicula.getId() %></td>
+                        <td data-label="Título"><%= pelicula.getTitulo() %></td>
+                        <td data-label="Duración"><%= pelicula.getDuracion() %> min</td>
+                        <td data-label="Género"><%= pelicula.getGenero() %></td>
+                        <td data-label="Director"><%= pelicula.getDirector() %></td>
+                        <td data-label="Clasificación"><%= pelicula.getClasificacion() %></td>
+                        <td data-label="Fecha de Estreno"><%= pelicula.getFechaEstreno() %></td>
+                        <td data-label="País"><%= pelicula.getPais() %></td>
+                        <td data-label="Idioma"><%= pelicula.getIdioma() %></td>
+                        <td data-label="Disponible"><%= pelicula.getDisponible() ? "Sí" : "No" %></td>
+                        <td data-label="Precio Reserva">$<%= pelicula.getPrecioReserva() %></td>
+                        <td data-label="Imagen">
                             <% if (pelicula.getImagen() != null) { %>
                             <img src="data:image/jpeg;base64,<%= Base64.getEncoder().encodeToString(pelicula.getImagen()) %>" class="img-thumbnail" width="100">
                             <% } else { %>
                             No disponible
                             <% } %>
                         </td>
-                        <td>
+                        <td data-label="Reservar">
                             <a href="reservarPelicula.jsp?id=<%= pelicula.getId() %>" class="btn btn-primary btn-sm">Reservar</a>
                         </td>
+                    </tr>
+
                     </tr>
                     <% }
                     } else { %>

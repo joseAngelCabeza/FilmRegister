@@ -93,9 +93,7 @@ public class ServletReservas extends HttpServlet{
             case "realizarReserva":
                 CreoReserva(request, response);
                 break;
-            case "borrarReserva":
-                BorroReserva(request, response);
-                break;
+
             default:
                 response.sendRedirect("index.jsp");
                 break;
@@ -107,71 +105,88 @@ public class ServletReservas extends HttpServlet{
         EntityTransaction tx = em.getTransaction();
 
         try {
-            // Obtengo los parámetros del formulario
-            String nombre = request.getParameter("nombre");
-            String apellidos = request.getParameter("apellidos");
-            String usuario = request.getParameter("usuario");
             String idPeliculaStr = request.getParameter("idPelicula");
+            String filaStr = request.getParameter("nFila");
+            String asientoStr = request.getParameter("nAsiento");
 
-
-
-            int peliculaId;
-            try {
-                peliculaId = Integer.parseInt(idPeliculaStr);
-            } catch (NumberFormatException e) {
-                response.sendRedirect("error.jsp");
+            if (idPeliculaStr == null || filaStr == null || asientoStr == null) {
+                request.getSession().setAttribute("errorReserva", "Faltan datos de la reserva.");
+                response.sendRedirect("reservarPelicula.jsp?id=" + idPeliculaStr);
                 return;
             }
 
-            // Busco usuario en la base de datos
-            Usuario usuarioEncontrado = null;
-            try {
-                usuarioEncontrado = (Usuario) em.createQuery("SELECT u FROM Usuario u WHERE u.usuario = :usuario")
-                        .setParameter("usuario", usuario)
-                        .getSingleResult();
-            } catch (NoResultException e) {
-                response.sendRedirect("error.jsp");
+            int peliculaId = Integer.parseInt(idPeliculaStr);
+            int fila = Integer.parseInt(filaStr);
+            int asiento = Integer.parseInt(asientoStr);
+
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("usuario") == null) {
+                request.getSession().setAttribute("errorReserva", "Debes iniciar sesión.");
+                response.sendRedirect("login.jsp");  // o a donde deba ir
                 return;
             }
 
-            // Obtengo la fecha del dia para la Reserva
-            LocalDate fechaReserva = LocalDate.now();
+            // Obtener usuario desde sesión (como String)
+            String nombreUsuario = (String) session.getAttribute("usuario");
 
-            // Creo la reserva
+            // Buscar el usuario en base de datos
+            Usuario usuario = (Usuario) em.createQuery("SELECT u FROM Usuario u WHERE u.usuario = :usuario")
+                    .setParameter("usuario", nombreUsuario)
+                    .getSingleResult();
+
+            // Verificar si el asiento ya está ocupado
+            Long ocupados = (Long) em.createQuery(
+                            "SELECT COUNT(r) FROM Reserva r WHERE r.pelicula.id = :peliculaId AND r.nFila = :fila AND r.nAsiento = :asiento")
+                    .setParameter("peliculaId", peliculaId)
+                    .setParameter("fila", fila)
+                    .setParameter("asiento", asiento)
+                    .getSingleResult();
+
+            if (ocupados != null && ocupados > 0) {
+                session.setAttribute("errorReserva", "El asiento Fila " + fila + ", Asiento " + asiento + " ya está reservado.");
+                response.sendRedirect("reservarPelicula.jsp?id=" + peliculaId);
+                return;
+            }
+
+            Pelicula pelicula = em.find(Pelicula.class, peliculaId);
+            if (pelicula == null) {
+                session.setAttribute("errorReserva", "Película no encontrada.");
+                response.sendRedirect("reservarPelicula.jsp");
+                return;
+            }
+
+            // Crear reserva
             Reserva nuevaReserva = new Reserva();
-            nuevaReserva.setUsuario(usuarioEncontrado);
-            nuevaReserva.setPelicula(em.find(Pelicula.class, peliculaId));
-            nuevaReserva.setFechaReserva(fechaReserva);
+            nuevaReserva.setUsuario(usuario);
+            nuevaReserva.setPelicula(pelicula);
+            nuevaReserva.setFechaReserva(LocalDate.now());
             nuevaReserva.setEstado("ACTIVA");
+            nuevaReserva.setnFila(fila);
+            nuevaReserva.setnAsiento(asiento);
 
-            // Guardo en la base de datos
             tx.begin();
             em.persist(nuevaReserva);
             tx.commit();
 
-            // Tambien guardo la reserva en la sesión para mostrarla en el JSP
-            HttpSession session = request.getSession();
+            // Agregar a sesión para mostrar luego si es necesario
             List<Reserva> reservas = (List<Reserva>) session.getAttribute("reservas");
-            if (reservas == null) {
-                reservas = new ArrayList<>();
-            }
+            if (reservas == null) reservas = new ArrayList<>();
             reservas.add(nuevaReserva);
             session.setAttribute("reservas", reservas);
 
-            // Redirigo a la interfaz de informacion de la reserva y para imprimir el ticket
             response.sendRedirect("reservaRealizada_PDF.jsp?id=" + nuevaReserva.getId());
 
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             e.printStackTrace();
-            response.sendRedirect("error.jsp");
+            request.getSession().setAttribute("errorReserva", "Error al procesar la reserva.");
+            response.sendRedirect("reservarPelicula.jsp?id=" + request.getParameter("idPelicula"));
         } finally {
             em.close();
         }
     }
 
     private void CreoTicket(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // Obtengo el id de la reserva para poder buscarla
         String idReservaStr = request.getParameter("idReserva");
 
         if (idReservaStr == null || idReservaStr.isEmpty()) {
@@ -187,7 +202,6 @@ public class ServletReservas extends HttpServlet{
             return;
         }
 
-        // Busco la reserva en la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             Reserva reserva = em.find(Reserva.class, idReserva);
@@ -196,52 +210,45 @@ public class ServletReservas extends HttpServlet{
                 return;
             }
 
-            // Obtengo los datos de la pelicula y el usuario para introducirlos al ticket
             Pelicula pelicula = reserva.getPelicula();
             Usuario usuario = reserva.getUsuario();
 
-            // Configuro la respuesta como PDF
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "inline; filename=ticket_reserva_" + idReserva + ".pdf");
 
-
-            // Creo el documento con orientación horizontal
-            Document documento = new Document(PageSize.A4.rotate()); // A4 en horizontal
+            Document documento = new Document(PageSize.A4.rotate());
             PdfWriter.getInstance(documento, response.getOutputStream());
             documento.open();
 
-            // Defino los estilos
             Font fuenteTitulo = new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD);
             Font fuenteSubtitulo = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD);
             Font fuenteTexto = new Font(Font.FontFamily.HELVETICA, 12);
 
-            // Creo el titulo del ticket
             Paragraph titulo = new Paragraph("Ticket de Reserva", fuenteTitulo);
             titulo.setAlignment(Element.ALIGN_CENTER);
             documento.add(titulo);
             documento.add(new Paragraph("\n"));
 
-            // Creo dos columnas de datos para el ticket
             PdfPTable tablaSuperior = new PdfPTable(2);
             tablaSuperior.setWidthPercentage(100);
             tablaSuperior.setSpacingBefore(10f);
-            tablaSuperior.setWidths(new float[]{1.2f, 1.8f}); // Proporción de columnas
+            tablaSuperior.setWidths(new float[]{1.2f, 1.8f});
 
-            // **Columna Izquierda (Detalles de Reserva)**
+            // Celda detalles reserva con fila y asiento incluidos
             PdfPCell celdaDetallesReserva = new PdfPCell();
-            celdaDetallesReserva.setBorderWidth(1); // Borde en la celda
+            celdaDetallesReserva.setBorderWidth(1);
             celdaDetallesReserva.addElement(new Paragraph("Detalles de la Reserva", fuenteSubtitulo));
             celdaDetallesReserva.addElement(new Paragraph("ID de Reserva: " + reserva.getId(), fuenteTexto));
             celdaDetallesReserva.addElement(new Paragraph("Usuario: " + usuario.getUsuario(), fuenteTexto));
+            celdaDetallesReserva.addElement(new Paragraph("Fila: " + reserva.getnFila(), fuenteTexto));
+            celdaDetallesReserva.addElement(new Paragraph("Asiento: " + reserva.getnAsiento(), fuenteTexto));
             tablaSuperior.addCell(celdaDetallesReserva);
 
-            // **Columna Derecha (Título y Imagen)**
             PdfPCell celdaImagen = new PdfPCell();
             celdaImagen.setBorderWidth(1);
             celdaImagen.addElement(new Paragraph("Película Reservada", fuenteSubtitulo));
             celdaImagen.addElement(new Paragraph("Título: " + pelicula.getTitulo(), fuenteTexto));
 
-            // Si existe la imagen la meto sino muestro un error
             if (pelicula.getImagen() != null) {
                 try {
                     Image imagen = Image.getInstance(pelicula.getImagen());
@@ -256,24 +263,20 @@ public class ServletReservas extends HttpServlet{
             }
 
             tablaSuperior.addCell(celdaImagen);
-            documento.add(tablaSuperior); // Agregar la tabla superior al documento
+            documento.add(tablaSuperior);
 
-            // Creo un espacio entre datos
             documento.add(new Paragraph("\n"));
 
-            // **Introduzco una fila inferior con detalles adicionales de la película**
             PdfPTable tablaDetalles = new PdfPTable(2);
             tablaDetalles.setWidthPercentage(100);
-            tablaDetalles.setWidths(new float[]{1, 1}); // Dos columnas iguales
+            tablaDetalles.setWidths(new float[]{1, 1});
 
-            // Celda de Duración
             PdfPCell celdaDuracion = new PdfPCell(new Paragraph("⏳ Duración: " + pelicula.getDuracion() + " minutos", fuenteTexto));
             celdaDuracion.setBorderWidth(1);
             celdaDuracion.setPadding(10);
             celdaDuracion.setHorizontalAlignment(Element.ALIGN_CENTER);
             tablaDetalles.addCell(celdaDuracion);
 
-            // Celda de Idioma
             PdfPCell celdaIdioma = new PdfPCell(new Paragraph("🌍 Idioma: " + pelicula.getIdioma(), fuenteTexto));
             celdaIdioma.setBorderWidth(1);
             celdaIdioma.setPadding(10);
@@ -284,12 +287,10 @@ public class ServletReservas extends HttpServlet{
 
             documento.add(new Paragraph("\n"));
 
-            // Creo un mensaje de agradecimiento
             Paragraph mensajeFinal = new Paragraph("Gracias por reservar con nosotros. ¡Disfruta la película! 🍿", fuenteSubtitulo);
             mensajeFinal.setAlignment(Element.ALIGN_CENTER);
             documento.add(mensajeFinal);
 
-            // Cierro el documento
             documento.close();
 
         } catch (Exception e) {
@@ -300,48 +301,107 @@ public class ServletReservas extends HttpServlet{
         }
     }
 
-    private void BorroReserva(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+    private void BorroReserva(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String idReservaStr = request.getParameter("idReserva");
+
+        HttpSession session = request.getSession(false);
+        if (idReservaStr == null || session == null || session.getAttribute("usuario") == null) {
+            response.sendRedirect("error.jsp");
+            return;
+        }
+
+        Usuario usuarioSesion = (Usuario) session.getAttribute("usuario");
+        EntityManager em = entityManagerFactory.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            int idReserva = Integer.parseInt(idReservaStr);
+            tx.begin();
+
+            Reserva reserva = em.find(Reserva.class, idReserva);
+
+            if (reserva == null || !reserva.getUsuario().getUsuario().equals(usuarioSesion.getUsuario())) {
+                tx.rollback();
+                response.sendRedirect("error.jsp");
+                return;
+            }
+
+            // Cambiar estado a "CANCELADA"
+            reserva.setEstado("CANCELADA");
+            em.merge(reserva);
+
+            tx.commit();
+
+            // Actualizar reservas en sesión
+            List<Reserva> reservasActualizadas = em.createQuery(
+                            "SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
+                    .setParameter("usuario", usuarioSesion)
+                    .getResultList();
+
+            session.setAttribute("reservas", reservasActualizadas);
+            response.sendRedirect("verMisReservas.jsp");
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            e.printStackTrace();
+            response.sendRedirect("error.jsp");
+        } finally {
+            em.close();
+        }
     }
 
+
+
+
+    @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession(false); // No crear sesión si no existe
+        String action = request.getParameter("action");
 
+        if ("cancelarReserva".equals(action)) {
+            BorroReserva(request, response);
+        } else {
+            response.setContentType("text/plain; charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST); // Código HTTP 400
+            response.getWriter().println("Acción no válida: " + action);
+        }
 
+        // Verificación de sesión y usuario logueado
+        HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect("index.jsp");
             return;
         }
 
+        // Obtener el objeto Usuario de la sesión
+        Object usuarioObj = session.getAttribute("usuario");
+        if (!(usuarioObj instanceof Usuario)) {
+            response.sendRedirect("error.jsp");
+            return;
+        }
 
-        Usuario usuario = (Usuario) session.getAttribute("usuario");
+        Usuario usuario = (Usuario) usuarioObj;
 
-        // Obtengo la lista de reservas desde la base de datos para este usuario
+        // Obtener reservas del usuario desde la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
-        List<Reserva> reservas = null;
 
         try {
-            // Busco las reservas del usuario autenticado
-            reservas = em.createQuery("SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
+            List<Reserva> reservas = em.createQuery(
+                            "SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
                     .setParameter("usuario", usuario)
                     .getResultList();
-            System.out.println("Número de reservas recuperadas: " + reservas.size());
 
-            // Guardar las reservas en la sesión
+            // Guardar la lista en sesión para que el JSP la use
             session.setAttribute("reservas", reservas);
 
-        } catch (Exception e) {
-            System.err.println("Error al recuperar las reservas: " + e.getMessage());
-            e.printStackTrace();
-            request.setAttribute("error", "Se ha producido un error al recuperar las reservas.");
+            // Mostrar la página de reservas
             request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
-            return;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("error.jsp");
         } finally {
             em.close();
         }
-
-        // Redirigo al JSP para mostrar las reservas
-        request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
     }
 
 

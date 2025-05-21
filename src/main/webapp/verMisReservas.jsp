@@ -60,11 +60,11 @@
             <td><%= reserva.getEstado() %></td>
             <td>
                 <% if ("ACTIVA".equals(reserva.getEstado())) { %>
-                <form action="realizarReserva" method="get">
+                <form action="servletReservas?action=cancelarReserva" method="get">
                     <input type="hidden" name="idReserva" value="<%= reserva.getId() %>">
-                    <input type="hidden" name="usuario" value="<%= reserva.getUsuario().getUsuario() %>">
                     <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
                 </form>
+
                 <% } %>
             </td>
         </tr>
@@ -76,4 +76,3 @@
 </div>
 </body>
 </html>
-

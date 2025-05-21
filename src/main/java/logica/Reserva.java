@@ -27,18 +27,26 @@ public class Reserva {
     @Column(name = "estado", nullable = false)
     private String estado; // Por ejemplo: "ACTIVA", "FINALIZADA", "CANCELADA"
 
-    // Constructor, getters, and setters
+    @Column(name = "n_fila", nullable = false)
+    private int nFila;
+
+    @Column(name = "n_asiento", nullable = false)
+    private int nAsiento;
 
     public Reserva() {
     }
 
-    public Reserva(Integer id, Usuario usuario, Pelicula pelicula, LocalDate fechaReserva, String estado) {
+    public Reserva(Integer id, Usuario usuario, Pelicula pelicula, LocalDate fechaReserva, String estado, int nFila, int nAsiento) {
         this.id = id;
         this.usuario = usuario;
         this.pelicula = pelicula;
         this.fechaReserva = fechaReserva;
         this.estado = estado;
+        this.nFila = nFila;
+        this.nAsiento = nAsiento;
     }
+
+    // Getters y Setters
 
     public Integer getId() {
         return id;
@@ -78,5 +86,21 @@ public class Reserva {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public int getnFila() {
+        return nFila;
+    }
+
+    public void setnFila(int nFila) {
+        this.nFila = nFila;
+    }
+
+    public int getnAsiento() {
+        return nAsiento;
+    }
+
+    public void setnAsiento(int nAsiento) {
+        this.nAsiento = nAsiento;
     }
 }
