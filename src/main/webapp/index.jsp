@@ -113,7 +113,6 @@
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link" href="verMisReservas.jsp">Ver Mis Reservas</a></li>
                 <li class="nav-item"><a class="nav-link" href="peliculas.jsp">Películas en Cartelera</a></li>
-                <li class="nav-item"><a class="nav-link" href="cancelarReserva.jsp">Cancelar Reserva</a></li>
             </ul>
 
             <% if (autenticado) { %>

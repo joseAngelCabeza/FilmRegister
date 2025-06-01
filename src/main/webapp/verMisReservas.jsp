@@ -5,9 +5,9 @@
 <%
     HttpSession sessionObj = request.getSession();
     List<Reserva> reservas = (List<Reserva>) sessionObj.getAttribute("reservas");
-
-    // Verifico si no hay reservas para mostrar
     boolean noReservas = (reservas == null || reservas.isEmpty());
+    String errorCancelar = (String) sessionObj.getAttribute("errorCancelar");
+    sessionObj.removeAttribute("errorCancelar");
 %>
 
 <!DOCTYPE html>
@@ -29,50 +29,96 @@
         .enlace-volver:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 576px) {
+            table thead {
+                display: none;
+            }
+
+            table tbody tr {
+                display: block;
+                margin-bottom: 1rem;
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                padding: 10px;
+            }
+
+            table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 6px 10px;
+                border: none;
+                border-bottom: 1px solid #eee;
+            }
+
+            table tbody td:last-child {
+                border-bottom: none;
+            }
+
+            table tbody td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #1565c0;
+            }
+        }
     </style>
 </head>
 <body class="bg-light">
 <a href="index.jsp" class="enlace-volver">&larr; Volver</a>
+
 <div class="container mt-5">
     <h2 class="text-center">Mis Reservas</h2>
+
+    <% if (errorCancelar != null) { %>
+    <div class="alert alert-danger text-center" role="alert">
+        <%= errorCancelar %>
+    </div>
+    <% } %>
 
     <% if (noReservas) { %>
     <div class="alert alert-info text-center" role="alert">
         No tienes reservas registradas.
     </div>
     <% } else { %>
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>ID Reserva</th>
-            <th>Película</th>
-            <th>Fecha de Reserva</th>
-            <th>Estado</th>
-            <th>Acción</th>
-        </tr>
-        </thead>
-        <tbody>
-        <% for (Reserva reserva : reservas) { %>
-        <tr>
-            <td><%= reserva.getId() %></td>
-            <td><%= reserva.getPelicula().getTitulo() %></td>
-            <td><%= reserva.getFechaReserva() %></td>
-            <td><%= reserva.getEstado() %></td>
-            <td>
-                <% if ("ACTIVA".equals(reserva.getEstado())) { %>
-                <form action="servletReservas?action=cancelarReserva" method="get">
-                    <input type="hidden" name="idReserva" value="<%= reserva.getId() %>">
-                    <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
-                </form>
-
-                <% } %>
-            </td>
-        </tr>
-        <% } %>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-primary">
+            <tr>
+                <th>ID</th>
+                <th>Película</th>
+                <th>Fila</th>
+                <th>Asiento</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% for (Reserva reserva : reservas) { %>
+            <tr>
+                <td data-label="ID"><%= reserva.getId() %></td>
+                <td data-label="Película"><%= reserva.getPelicula().getTitulo() %></td>
+                <td data-label="Fila"><%= reserva.getnFila() %></td>
+                <td data-label="Asiento"><%= reserva.getnAsiento() %></td>
+                <td data-label="Fecha"><%= reserva.getFechaReserva() %></td>
+                <td data-label="Estado"><%= reserva.getEstado() %></td>
+                <td data-label="Acción">
+                    <% if ("ACTIVA".equals(reserva.getEstado())) { %>
+                    <form action="servletReservas?action=cancelarReserva" method="post">
+                        <input type="hidden" name="idReserva" value="<%= reserva.getId() %>">
+                        <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
+                    </form>
+                    <% } else { %>
+                    <span class="text-muted">-</span>
+                    <% } %>
+                </td>
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+    </div>
     <% } %>
-
 </div>
 </body>
 </html>

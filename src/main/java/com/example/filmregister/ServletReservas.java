@@ -81,6 +81,7 @@ public class ServletReservas extends HttpServlet{
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
+
         if (action == null) {
             response.sendRedirect("index.jsp");
             return;
@@ -98,6 +99,8 @@ public class ServletReservas extends HttpServlet{
                 response.sendRedirect("index.jsp");
                 break;
         }
+
+
     }
 
     private void CreoReserva(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -301,13 +304,15 @@ public class ServletReservas extends HttpServlet{
         }
     }
 
-
     private void BorroReserva(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String idReservaStr = request.getParameter("idReserva");
 
         HttpSession session = request.getSession(false);
         if (idReservaStr == null || session == null || session.getAttribute("usuario") == null) {
-            response.sendRedirect("error.jsp");
+            if (session != null) {
+                session.setAttribute("errorCancelar", "Error: sesión inválida o ID de reserva no recibido.");
+            }
+            request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
             return;
         }
 
@@ -323,28 +328,30 @@ public class ServletReservas extends HttpServlet{
 
             if (reserva == null || !reserva.getUsuario().getUsuario().equals(usuarioSesion.getUsuario())) {
                 tx.rollback();
-                response.sendRedirect("error.jsp");
+                session.setAttribute("errorCancelar", "No se pudo cancelar la reserva: no pertenece al usuario actual o no existe.");
+                request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
                 return;
             }
 
-            // Cambiar estado a "CANCELADA"
+            // Cambiar el estado a CANCELADA en lugar de eliminar
             reserva.setEstado("CANCELADA");
             em.merge(reserva);
-
             tx.commit();
 
-            // Actualizar reservas en sesión
+            // Recargar reservas activas del usuario
             List<Reserva> reservasActualizadas = em.createQuery(
-                            "SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
+                            "SELECT r FROM Reserva r WHERE r.usuario = :usuario AND r.estado = 'ACTIVA'", Reserva.class)
                     .setParameter("usuario", usuarioSesion)
                     .getResultList();
 
             session.setAttribute("reservas", reservasActualizadas);
-            response.sendRedirect("verMisReservas.jsp");
+            request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
+
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             e.printStackTrace();
-            response.sendRedirect("error.jsp");
+            session.setAttribute("errorCancelar", "Ocurrió un error al cancelar la reserva.");
+            request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
         } finally {
             em.close();
         }
@@ -357,14 +364,6 @@ public class ServletReservas extends HttpServlet{
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
-        if ("cancelarReserva".equals(action)) {
-            BorroReserva(request, response);
-        } else {
-            response.setContentType("text/plain; charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST); // Código HTTP 400
-            response.getWriter().println("Acción no válida: " + action);
-        }
-
         // Verificación de sesión y usuario logueado
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
@@ -374,23 +373,24 @@ public class ServletReservas extends HttpServlet{
 
         // Obtener el objeto Usuario de la sesión
         Object usuarioObj = session.getAttribute("usuario");
-        if (!(usuarioObj instanceof Usuario)) {
+        if (!(usuarioObj instanceof Usuario usuario)) {
             response.sendRedirect("error.jsp");
             return;
         }
 
-        Usuario usuario = (Usuario) usuarioObj;
+        if ("cancelarReserva".equals(action)) {
+            BorroReserva(request, response);
+            return;
+        }
 
-        // Obtener reservas del usuario desde la base de datos
+        // Cargar todas las reservas del usuario desde la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
-
         try {
             List<Reserva> reservas = em.createQuery(
                             "SELECT r FROM Reserva r WHERE r.usuario = :usuario", Reserva.class)
                     .setParameter("usuario", usuario)
                     .getResultList();
 
-            // Guardar la lista en sesión para que el JSP la use
             session.setAttribute("reservas", reservas);
 
             // Mostrar la página de reservas
@@ -403,6 +403,7 @@ public class ServletReservas extends HttpServlet{
             em.close();
         }
     }
+
 
 
     @Override
