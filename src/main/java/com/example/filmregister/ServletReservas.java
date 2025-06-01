@@ -89,10 +89,15 @@ public class ServletReservas extends HttpServlet{
 
         switch (action) {
             case "CreoticketPDF":
-                CreoTicket(request,response);
+                CreoTicket(request, response);
                 break;
+
             case "realizarReserva":
                 CreoReserva(request, response);
+                break;
+
+            case "cancelarReserva":
+                BorroReserva(request, response);
                 break;
 
             default:
@@ -316,11 +321,19 @@ public class ServletReservas extends HttpServlet{
             return;
         }
 
-        Usuario usuarioSesion = (Usuario) session.getAttribute("usuario");
         EntityManager em = entityManagerFactory.createEntityManager();
         EntityTransaction tx = em.getTransaction();
 
         try {
+            // Obtener nombre de usuario (almacenado como String)
+            String nombreUsuario = (String) session.getAttribute("usuario");
+
+            // Buscar el objeto Usuario correspondiente en la base de datos
+            Usuario usuarioSesion = em.createQuery(
+                            "SELECT u FROM Usuario u WHERE u.usuario = :usuario", Usuario.class)
+                    .setParameter("usuario", nombreUsuario)
+                    .getSingleResult();
+
             int idReserva = Integer.parseInt(idReservaStr);
             tx.begin();
 
@@ -378,10 +391,7 @@ public class ServletReservas extends HttpServlet{
             return;
         }
 
-        if ("cancelarReserva".equals(action)) {
-            BorroReserva(request, response);
-            return;
-        }
+
 
         // Cargar todas las reservas del usuario desde la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
