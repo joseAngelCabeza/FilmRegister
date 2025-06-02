@@ -95,6 +95,7 @@
             </tr>
             </thead>
             <tbody>
+            <!--Cargo los datos de mis reservas-->
             <% for (Reserva reserva : reservas) { %>
             <tr>
                 <td data-label="ID"><%= reserva.getId() %></td>

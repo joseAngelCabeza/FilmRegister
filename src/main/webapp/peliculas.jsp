@@ -30,6 +30,7 @@
 </head>
 <body class="bg-light">
 <a href="index.jsp" class="enlace-volver">&larr; Volver</a>
+<!--En esta vista muestro la crtelera de algunas pelicula marcadas como disponibles con valor 1-->
 <div class="container mt-5">
     <h2 class="text-center">Películas en Cartelera</h2>
     <div class="row d-flex align-items-stretch">
@@ -38,6 +39,7 @@
         <% if (pelicula.getDisponible()) { %>
         <div class="col-md-4 mb-4 d-flex">
             <div class="card h-100 w-100">
+                <!--Cargo la imagen de la pelicula-->
                 <img src="data:image/jpeg;base64,<%= java.util.Base64.getEncoder().encodeToString(pelicula.getImagen()) %>" class="card-img-top" alt="<%= pelicula.getTitulo() %>">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title"><%= pelicula.getTitulo() %></h5>

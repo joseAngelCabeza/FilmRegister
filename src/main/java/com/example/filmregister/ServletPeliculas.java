@@ -67,7 +67,7 @@ public class ServletPeliculas extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
 
-        // Compruebp que hay una sesion
+        // Compruebo que hay una sesion
         if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect("index.jsp");
             return;

@@ -83,7 +83,7 @@
                         break;
                     }
                 }
-
+                //Con la reserva comprobada que se ha realizado obtengo los datos de la imagen de la pelicula
                 if (reservaEncontrada != null) {
                     Pelicula peliculaReservada = reservaEncontrada.getPelicula();
                     byte[] imagenBytes = peliculaReservada.getImagen();
@@ -91,6 +91,7 @@
                             ? Base64.getEncoder().encodeToString(imagenBytes)
                             : "";
     %>
+    <!--Y aqui obtengo los otros datos de la película-->
     <p><strong>Título:</strong> <%= peliculaReservada.getTitulo() %></p>
     <p><strong>Duración:</strong> <%= peliculaReservada.getDuracion() %> minutos</p>
     <p><strong>Fecha de Reserva:</strong> <%= reservaEncontrada.getFechaReserva() %></p>

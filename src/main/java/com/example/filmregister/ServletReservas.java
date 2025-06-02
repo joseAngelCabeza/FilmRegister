@@ -87,6 +87,7 @@ public class ServletReservas extends HttpServlet{
             return;
         }
 
+        //con este switch detecto que accion se realiza
         switch (action) {
             case "CreoticketPDF":
                 CreoTicket(request, response);
@@ -142,7 +143,7 @@ public class ServletReservas extends HttpServlet{
                     .setParameter("usuario", nombreUsuario)
                     .getSingleResult();
 
-            // Verificar si el asiento ya está ocupado
+            // Verifico si el asiento ya está ocupado
             Long ocupados = (Long) em.createQuery(
                             "SELECT COUNT(r) FROM Reserva r WHERE r.pelicula.id = :peliculaId AND r.nFila = :fila AND r.nAsiento = :asiento")
                     .setParameter("peliculaId", peliculaId)
@@ -163,7 +164,7 @@ public class ServletReservas extends HttpServlet{
                 return;
             }
 
-            // Crear reserva
+            // Creo en la base de datos la nueva reserva
             Reserva nuevaReserva = new Reserva();
             nuevaReserva.setUsuario(usuario);
             nuevaReserva.setPelicula(pelicula);
@@ -176,12 +177,13 @@ public class ServletReservas extends HttpServlet{
             em.persist(nuevaReserva);
             tx.commit();
 
-            // Agregar a sesión para mostrar luego si es necesario
+            // Introduzco la nueva reserva a la lista de reservas
             List<Reserva> reservas = (List<Reserva>) session.getAttribute("reservas");
             if (reservas == null) reservas = new ArrayList<>();
             reservas.add(nuevaReserva);
             session.setAttribute("reservas", reservas);
 
+            //Redirijo a la vista de la reserva realizada con información de la pelicula
             response.sendRedirect("reservaRealizada_PDF.jsp?id=" + nuevaReserva.getId());
 
         } catch (Exception e) {
@@ -242,7 +244,7 @@ public class ServletReservas extends HttpServlet{
             tablaSuperior.setSpacingBefore(10f);
             tablaSuperior.setWidths(new float[]{1.2f, 1.8f});
 
-            // Celda detalles reserva con fila y asiento incluidos
+            // Almaceno los datos de la reserva en la primera celda
             PdfPCell celdaDetallesReserva = new PdfPCell();
             celdaDetallesReserva.setBorderWidth(1);
             celdaDetallesReserva.addElement(new Paragraph("Detalles de la Reserva", fuenteSubtitulo));
@@ -252,6 +254,7 @@ public class ServletReservas extends HttpServlet{
             celdaDetallesReserva.addElement(new Paragraph("Asiento: " + reserva.getnAsiento(), fuenteTexto));
             tablaSuperior.addCell(celdaDetallesReserva);
 
+            //En esta otra celda van los datos de la película
             PdfPCell celdaImagen = new PdfPCell();
             celdaImagen.setBorderWidth(1);
             celdaImagen.addElement(new Paragraph("Película Reservada", fuenteSubtitulo));
@@ -310,6 +313,7 @@ public class ServletReservas extends HttpServlet{
     }
 
     private void BorroReserva(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        //Recupero de la lista el id de la reserva que quiero cancelar
         String idReservaStr = request.getParameter("idReserva");
 
         HttpSession session = request.getSession(false);
@@ -325,10 +329,10 @@ public class ServletReservas extends HttpServlet{
         EntityTransaction tx = em.getTransaction();
 
         try {
-            // Obtener nombre de usuario (almacenado como String)
+            // Recupero el nombre de usuario
             String nombreUsuario = (String) session.getAttribute("usuario");
 
-            // Buscar el objeto Usuario correspondiente en la base de datos
+            // Busco el objeto Usuario correspondiente en la base de datos para obtener cual reserva cancelar
             Usuario usuarioSesion = em.createQuery(
                             "SELECT u FROM Usuario u WHERE u.usuario = :usuario", Usuario.class)
                     .setParameter("usuario", nombreUsuario)
@@ -346,12 +350,12 @@ public class ServletReservas extends HttpServlet{
                 return;
             }
 
-            // Cambiar el estado a CANCELADA en lugar de eliminar
+            // Actualizo el estado a CANCELADA
             reserva.setEstado("CANCELADA");
             em.merge(reserva);
             tx.commit();
 
-            // Recargar reservas activas del usuario
+            // Recargo la lista para que desaparezca la cancelada
             List<Reserva> reservasActualizadas = em.createQuery(
                             "SELECT r FROM Reserva r WHERE r.usuario = :usuario AND r.estado = 'ACTIVA'", Reserva.class)
                     .setParameter("usuario", usuarioSesion)
@@ -377,14 +381,14 @@ public class ServletReservas extends HttpServlet{
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
-        // Verificación de sesión y usuario logueado
+        // Verifico que exite la sesión y hay un usuario logueado
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect("index.jsp");
             return;
         }
 
-        // Obtener el objeto Usuario de la sesión
+        // Obtengo el objeto Usuario de la sesión
         Object usuarioObj = session.getAttribute("usuario");
         if (!(usuarioObj instanceof Usuario usuario)) {
             response.sendRedirect("error.jsp");
@@ -393,7 +397,7 @@ public class ServletReservas extends HttpServlet{
 
 
 
-        // Cargar todas las reservas del usuario desde la base de datos
+        // Obtengo las reservas de la base de datos
         EntityManager em = entityManagerFactory.createEntityManager();
         try {
             List<Reserva> reservas = em.createQuery(
@@ -403,7 +407,7 @@ public class ServletReservas extends HttpServlet{
 
             session.setAttribute("reservas", reservas);
 
-            // Mostrar la página de reservas
+            // Envio la lista de reservas del usuario en la sesión
             request.getRequestDispatcher("/verMisReservas.jsp").forward(request, response);
 
         } catch (Exception e) {

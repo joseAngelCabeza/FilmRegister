@@ -226,7 +226,7 @@ public class ServletUsuarios extends HttpServlet {
         propiedades.put("mail.smtp.auth", "true");
         propiedades.put("mail.smtp.starttls.enable", "true");
 
-        // Autenticación
+        // Realizo la Autenticación del correo
         Session sesion = Session.getInstance(propiedades, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(remitente, clave);
